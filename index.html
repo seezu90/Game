@@ -1,0 +1,2730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FriendZone 🌌 — Play Together, Anywhere</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --bg: #080810;
+  --bg2: #0e0e1a;
+  --bg3: #13132a;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --cyan: #06b6d4;
+  --pink: #ec4899;
+  --green: #10b981;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --border: rgba(124,58,237,0.3);
+  --glow-purple: 0 0 20px rgba(124,58,237,0.5);
+  --glow-cyan: 0 0 20px rgba(6,182,212,0.5);
+  --glow-pink: 0 0 20px rgba(236,72,153,0.5);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== STARS BG ===== */
+#stars-canvas {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ===== LOBBY ===== */
+#lobby {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.logo {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--purple-light), var(--cyan), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin-bottom: 8px;
+  animation: pulse-logo 3s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+  0%,100% { filter: drop-shadow(0 0 20px rgba(168,85,247,0.5)); }
+  50% { filter: drop-shadow(0 0 40px rgba(6,182,212,0.8)); }
+}
+
+.tagline {
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  margin-bottom: 50px;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+.lobby-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 0 60px rgba(124,58,237,0.15);
+}
+
+.lobby-card h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem;
+  color: var(--purple-light);
+  margin-bottom: 24px;
+  letter-spacing: 0.08em;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--purple-light);
+  box-shadow: var(--glow-purple);
+}
+
+.avatar-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.avatar-btn {
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: var(--bg3);
+  transition: all 0.2s;
+}
+
+.avatar-btn:hover { transform: scale(1.1); }
+.avatar-btn.selected { border-color: var(--purple-light); box-shadow: var(--glow-purple); }
+
+.btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--purple), var(--purple-light));
+  color: white;
+  box-shadow: var(--glow-purple);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(124,58,237,0.7);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+}
+
+.btn-secondary:hover {
+  background: rgba(6,182,212,0.1);
+  box-shadow: var(--glow-cyan);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ===== MAIN APP ===== */
+#app {
+  display: none;
+  position: relative;
+  z-index: 10;
+  height: 100vh;
+  flex-direction: column;
+}
+
+/* ===== TOP BAR ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(8,8,16,0.9);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topbar-logo {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.room-code-badge {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.8rem;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.room-code-badge:hover { box-shadow: var(--glow-cyan); }
+
+.players-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.player-avatar-mini {
+  position: relative;
+  font-size: 1.5rem;
+  cursor: default;
+}
+
+.player-avatar-mini .name-tag {
+  display: none;
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.player-avatar-mini:hover .name-tag { display: block; }
+
+.voice-ring {
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--green);
+  animation: voice-pulse 0.8s ease-in-out infinite;
+  display: none;
+}
+
+.speaking .voice-ring { display: block; }
+
+@keyframes voice-pulse {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.3; }
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.icon-btn:hover { border-color: var(--purple-light); box-shadow: var(--glow-purple); }
+.icon-btn.active { background: rgba(124,58,237,0.3); border-color: var(--purple-light); }
+.icon-btn.mic-on { border-color: var(--green); color: var(--green); }
+.icon-btn.mic-off { border-color: var(--red); color: var(--red); }
+
+/* ===== MAIN LAYOUT ===== */
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 60px);
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-tab {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.sidebar-tab.active {
+  color: var(--purple-light);
+  border-bottom-color: var(--purple-light);
+}
+
+.sidebar-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.sidebar-panel.active { display: flex; }
+
+/* ===== CHAT ===== */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.chat-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  animation: msg-in 0.3s ease;
+}
+
+@keyframes msg-in {
+  from { opacity:0; transform: translateY(8px); }
+  to { opacity:1; transform: translateY(0); }
+}
+
+.chat-msg.system {
+  justify-content: center;
+  opacity: 0.5;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.msg-avatar { font-size: 1.3rem; flex-shrink: 0; }
+
+.msg-body { flex: 1; }
+
+.msg-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.msg-name { font-size: 0.75rem; font-weight: 600; color: var(--purple-light); }
+.msg-time { font-size: 0.65rem; color: var(--text-dim); }
+.msg-text { font-size: 0.9rem; line-height: 1.4; word-break: break-word; }
+
+.msg-reactions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.reaction-pill {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reaction-pill:hover { border-color: var(--purple-light); }
+.reaction-pill.mine { background: rgba(124,58,237,0.2); border-color: var(--purple-light); }
+
+.chat-input-area {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.reaction-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-reaction {
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: transform 0.2s;
+  background: var(--bg3);
+}
+
+.quick-reaction:hover { transform: scale(1.3); }
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  resize: none;
+  max-height: 100px;
+}
+
+.chat-input:focus { border-color: var(--purple-light); }
+
+.send-btn {
+  background: linear-gradient(135deg, var(--purple), var(--purple-light));
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: white;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+
+.send-btn:hover { transform: scale(1.05); box-shadow: var(--glow-purple); }
+
+/* ===== GAMES LIST ===== */
+.games-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.game-card:hover {
+  border-color: var(--purple-light);
+  transform: translateX(4px);
+  box-shadow: var(--glow-purple);
+}
+
+.game-card.active {
+  border-color: var(--cyan);
+  background: rgba(6,182,212,0.1);
+}
+
+.game-icon { font-size: 1.8rem; }
+
+.game-info h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.game-info p {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.game-tag {
+  margin-left: auto;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: rgba(124,58,237,0.2);
+  color: var(--purple-light);
+  white-space: nowrap;
+}
+
+/* ===== MAIN GAME AREA ===== */
+.game-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.game-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(13,13,26,0.5);
+}
+
+.game-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.game-score-display {
+  display: flex;
+  gap: 16px;
+}
+
+.score-item {
+  text-align: center;
+  padding: 6px 12px;
+  background: var(--bg3);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.score-item .score-label { font-size: 0.65rem; color: var(--text-dim); }
+.score-item .score-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.game-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+}
+
+/* ===== FLOATING REACTIONS ===== */
+#floating-reactions {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.float-emoji {
+  position: absolute;
+  font-size: 2.5rem;
+  animation: float-up 2.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-300px) scale(0.5) rotate(20deg); }
+}
+
+/* ===== TOAST ===== */
+#toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  animation: toast-in 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  max-width: 280px;
+}
+
+@keyframes toast-in {
+  from { opacity:0; transform: translateX(20px); }
+  to { opacity:1; transform: translateX(0); }
+}
+
+/* ===== GAMES ===== */
+
+/* TIC TAC TOE */
+.ttt-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: min(320px, 80vw);
+}
+
+.ttt-cell {
+  aspect-ratio: 1;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ttt-cell:hover:empty { border-color: var(--purple-light); background: rgba(124,58,237,0.1); }
+.ttt-cell.X { color: var(--cyan); border-color: var(--cyan); }
+.ttt-cell.O { color: var(--pink); border-color: var(--pink); }
+.ttt-cell.win { animation: win-glow 0.5s ease infinite alternate; }
+@keyframes win-glow {
+  from { box-shadow: 0 0 10px var(--yellow); }
+  to { box-shadow: 0 0 30px var(--yellow); }
+}
+
+/* CONNECT FOUR */
+.c4-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c4-row { display: flex; gap: 6px; }
+
+.c4-cell {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.c4-cell:hover { border-color: var(--purple-light); }
+.c4-cell.p1 { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+.c4-cell.p2 { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 10px var(--pink); }
+
+/* MEMORY FLIP */
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 400px;
+}
+
+.mem-card {
+  aspect-ratio: 1;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: transform 0.3s;
+  transform-style: preserve-3d;
+  perspective: 500px;
+}
+
+.mem-card.flipped, .mem-card.matched { transform: rotateY(180deg); }
+.mem-card.matched { border-color: var(--green); opacity: 0.6; }
+.mem-card .back { display: none; }
+.mem-card.flipped .back, .mem-card.matched .back { display: flex; align-items: center; justify-content: center; }
+.mem-card.flipped .front, .mem-card.matched .front { display: none; }
+
+/* WORD GUESS */
+.word-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.word-display {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.word-letter {
+  width: 44px; height: 52px;
+  border-bottom: 3px solid var(--purple-light);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  transition: all 0.3s;
+}
+
+.word-letter.revealed { color: var(--cyan); animation: letter-pop 0.3s ease; }
+@keyframes letter-pop {
+  0% { transform: scale(0.5); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.hangman-hint {
+  font-size: 2rem;
+  letter-spacing: 4px;
+  color: var(--text-dim);
+}
+
+.keyboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-width: 400px;
+}
+
+.key-btn {
+  width: 38px; height: 38px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+
+.key-btn:hover { border-color: var(--purple-light); }
+.key-btn.correct { background: rgba(16,185,129,0.3); border-color: var(--green); color: var(--green); }
+.key-btn.wrong { background: rgba(239,68,68,0.2); border-color: var(--red); color: var(--red); opacity: 0.5; }
+
+/* QUIZ */
+.quiz-game {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 550px;
+  width: 100%;
+}
+
+.quiz-question {
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+  padding: 20px;
+  background: var(--bg3);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.quiz-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quiz-option {
+  padding: 14px 16px;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.quiz-option:hover { border-color: var(--purple-light); background: rgba(124,58,237,0.1); }
+.quiz-option.correct { border-color: var(--green); background: rgba(16,185,129,0.2); }
+.quiz-option.wrong { border-color: var(--red); background: rgba(239,68,68,0.2); }
+.quiz-option.disabled { pointer-events: none; opacity: 0.6; }
+
+.quiz-timer-bar {
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.quiz-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+  transition: width 0.1s linear;
+  border-radius: 3px;
+}
+
+/* MATH DUEL */
+.math-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 450px;
+  width: 100%;
+}
+
+.math-problem {
+  font-family: 'Orbitron', monospace;
+  font-size: 3rem;
+  font-weight: 900;
+  text-align: center;
+  background: linear-gradient(135deg, var(--cyan), var(--purple-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.math-answer-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.math-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 1.5rem;
+  font-family: 'Orbitron', monospace;
+  text-align: center;
+  color: var(--text);
+  outline: none;
+}
+
+.math-input:focus { border-color: var(--cyan); box-shadow: var(--glow-cyan); }
+
+.math-submit {
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border: none;
+  border-radius: 14px;
+  padding: 16px 24px;
+  color: white;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.math-submit:hover { transform: scale(1.05); box-shadow: var(--glow-cyan); }
+
+/* DRAW TOGETHER */
+#draw-canvas {
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  cursor: crosshair;
+  background: white;
+  max-width: 100%;
+  touch-action: none;
+}
+
+.draw-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.color-dot {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.color-dot.selected { border-color: white; transform: scale(1.2); }
+
+.brush-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.brush-btn.active { border-color: var(--purple-light); color: var(--purple-light); }
+
+/* TRUTH OR DARE */
+.tod-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.tod-card {
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 30px;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  width: 100%;
+  transition: all 0.3s;
+}
+
+.tod-card.truth { border-color: var(--cyan); background: rgba(6,182,212,0.1); }
+.tod-card.dare { border-color: var(--pink); background: rgba(236,72,153,0.1); }
+
+.tod-btns { display: flex; gap: 12px; width: 100%; }
+
+.tod-btn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tod-btn.truth-btn {
+  background: linear-gradient(135deg, var(--cyan), #0284c7);
+  color: white;
+}
+
+.tod-btn.dare-btn {
+  background: linear-gradient(135deg, var(--pink), #be185d);
+  color: white;
+}
+
+.tod-btn:hover { transform: translateY(-2px); }
+
+/* WOULD YOU RATHER */
+.wyr-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 550px;
+  width: 100%;
+}
+
+.wyr-question { font-size: 1.1rem; text-align: center; color: var(--text-dim); }
+
+.wyr-options {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.wyr-opt {
+  flex: 1;
+  padding: 24px 16px;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s;
+  line-height: 1.4;
+}
+
+.wyr-opt:hover { transform: scale(1.02); }
+
+.wyr-opt.selected-a { border-color: var(--purple-light); background: rgba(124,58,237,0.2); }
+.wyr-opt.selected-b { border-color: var(--pink); background: rgba(236,72,153,0.2); }
+
+.wyr-results {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.wyr-bar-wrap { flex: 1; }
+.wyr-bar-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; text-align: center; }
+.wyr-bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.wyr-bar-fill-a { height: 100%; background: var(--purple-light); border-radius: 4px; transition: width 0.5s; }
+.wyr-bar-fill-b { height: 100%; background: var(--pink); border-radius: 4px; transition: width 0.5s; }
+
+/* SNAKE (solo) */
+#snake-canvas {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+}
+
+/* LOBBY WAITING */
+.waiting-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+  max-width: 450px;
+}
+
+.waiting-room h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.online-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.online-player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.95rem;
+}
+
+.online-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+.status-line {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+
+/* SCOREBOARD */
+.scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.score-rank { font-family: 'Orbitron', monospace; font-size: 0.8rem; color: var(--yellow); width: 24px; }
+.score-avatar { font-size: 1.3rem; }
+.score-name { flex: 1; font-size: 0.9rem; font-weight: 600; }
+.score-pts { font-family: 'Orbitron', monospace; color: var(--cyan); font-weight: 700; }
+
+/* DICEROLL */
+.dice-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.dice {
+  font-size: 6rem;
+  animation: none;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.dice.rolling {
+  animation: dice-roll 0.6s ease;
+}
+
+@keyframes dice-roll {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(0.8); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  75% { transform: rotate(270deg) scale(0.8); }
+}
+
+/* MUSIC VIBE */
+.vibe-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.vibe-word {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--purple-light), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding: 20px;
+  background-color: var(--bg3);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  width: 100%;
+}
+
+.vibe-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: 'Space Grotesk', sans-serif;
+  outline: none;
+  text-align: center;
+}
+
+.vibe-input:focus { border-color: var(--pink); box-shadow: var(--glow-pink); }
+
+.vibe-answers {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vibe-ans-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg3);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+/* RESULT MODAL */
+.result-overlay {
+  display: none;
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  background: rgba(8,8,16,0.85);
+  z-index: 5000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+.result-overlay.show { display: flex; }
+
+.result-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: modal-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modal-in {
+  from { transform: scale(0.5); opacity:0; }
+  to { transform: scale(1); opacity:1; }
+}
+
+.result-emoji { font-size: 4rem; margin-bottom: 16px; }
+.result-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--yellow), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.result-sub { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 24px; }
+
+/* responsive */
+@media (max-width: 768px) {
+  .sidebar { width: 100%; min-width: unset; height: 300px; }
+  .main-layout { flex-direction: column; }
+  .game-area { min-height: 400px; }
+  .quiz-options { grid-template-columns: 1fr; }
+  .wyr-options { flex-direction: column; }
+  .c4-cell { width: 36px; height: 36px; }
+  .math-problem { font-size: 2rem; }
+  .ttt-cell { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+<div id="floating-reactions"></div>
+<div id="toast-container"></div>
+
+<!-- ===== LOBBY ===== -->
+<div id="lobby">
+  <div class="logo">FriendZone 🌌</div>
+  <div class="tagline">Play Together · Anywhere in the World</div>
+  
+  <div class="lobby-card">
+    <h2>🚀 Enter Your Identity</h2>
+    
+    <div class="form-group">
+      <label>Your Name</label>
+      <input type="text" id="player-name-input" placeholder="What do your friends call you?" maxlength="16">
+    </div>
+    
+    <div class="form-group">
+      <label>Pick Your Avatar</label>
+      <div class="avatar-picker" id="avatar-picker">
+        <!-- avatars injected by JS -->
+      </div>
+    </div>
+    
+    <button class="btn btn-primary" onclick="createRoom()">✨ Create New Room</button>
+    
+    <div class="divider">or join existing</div>
+    
+    <div class="form-group">
+      <label>Room Code</label>
+      <input type="text" id="room-code-input" placeholder="e.g. ZXQK" maxlength="4" style="text-transform:uppercase; font-family: 'Orbitron', monospace; letter-spacing: 0.2em; font-size:1.3rem;">
+    </div>
+    
+    <button class="btn btn-secondary" onclick="joinRoom()">🎮 Join Room</button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app" style="display:none; flex-direction:column; height:100vh;">
+  
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">FZ 🌌</div>
+    
+    <div class="room-info">
+      <div class="room-code-badge" onclick="copyRoomCode()" title="Click to copy">
+        🔑 <span id="room-code-display">----</span>
+      </div>
+      <div class="players-bar" id="players-bar"></div>
+    </div>
+    
+    <div class="topbar-actions">
+      <button class="icon-btn" id="mic-btn" onclick="toggleMic()" title="Voice Chat">🎙️</button>
+      <button class="icon-btn" onclick="showFullscreenReaction()" title="React">🎉</button>
+      <button class="icon-btn" onclick="leaveRoom()" title="Leave">🚪</button>
+    </div>
+  </div>
+  
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+    
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-tabs">
+        <div class="sidebar-tab active" onclick="switchSidebar('chat', this)">💬 Chat</div>
+        <div class="sidebar-tab" onclick="switchSidebar('games', this)">🎮 Games</div>
+        <div class="sidebar-tab" onclick="switchSidebar('scores', this)">🏆 Scores</div>
+      </div>
+      
+      <!-- CHAT PANEL -->
+      <div class="sidebar-panel active" id="panel-chat">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-area">
+          <div class="reaction-bar" id="reaction-bar"></div>
+          <div class="chat-input-row">
+            <textarea class="chat-input" id="chat-input" placeholder="Say something..." rows="1" onkeydown="chatKeydown(event)"></textarea>
+            <button class="send-btn" onclick="sendChat()">➤</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- GAMES PANEL -->
+      <div class="sidebar-panel" id="panel-games">
+        <div class="games-list" id="games-list"></div>
+      </div>
+      
+      <!-- SCORES PANEL -->
+      <div class="sidebar-panel" id="panel-scores">
+        <div class="scoreboard" id="scoreboard"></div>
+      </div>
+    </div>
+    
+    <!-- GAME AREA -->
+    <div class="game-area">
+      <div class="game-header">
+        <div class="game-title" id="game-area-title">🌌 Welcome to FriendZone</div>
+        <div class="game-score-display" id="game-score-display"></div>
+      </div>
+      <div class="game-content" id="game-content">
+        <div class="waiting-room" id="waiting-room">
+          <div style="font-size:4rem;">🌌</div>
+          <h2>Room Created!</h2>
+          <p style="color:var(--text-dim); font-size:0.9rem;">Share the room code with your friends, then pick a game from the Games tab to start playing together!</p>
+          <div style="background:var(--bg3); border:2px solid var(--cyan); border-radius:16px; padding:20px 40px; font-family:'Orbitron',monospace; font-size:2rem; letter-spacing:0.3em; color:var(--cyan); box-shadow:var(--glow-cyan);" id="big-room-code">----</div>
+          <p class="status-line">Waiting for friends to join...</p>
+          <div class="online-players-list" id="online-players-list"></div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-modal">
+    <div class="result-emoji" id="result-emoji">🎉</div>
+    <div class="result-title" id="result-title">Game Over!</div>
+    <div class="result-sub" id="result-sub">Great game everyone!</div>
+    <button class="btn btn-primary" onclick="closeResult()" style="margin-top:0;">Play Again 🔄</button>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDemo_Replace_With_Real_Key",
+  authDomain: "friendzone-demo.firebaseapp.com",
+  databaseURL: "https://friendzone-demo-default-rtdb.firebaseio.com",
+  projectId: "friendzone-demo",
+  storageBucket: "friendzone-demo.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abcdef"
+};
+
+// ===== STARS =====
+const starsCanvas = document.getElementById('stars-canvas');
+const sCtx = starsCanvas.getContext('2d');
+let stars = [];
+
+function initStars() {
+  starsCanvas.width = window.innerWidth;
+  starsCanvas.height = window.innerHeight;
+  stars = [];
+  for (let i = 0; i < 200; i++) {
+    stars.push({
+      x: Math.random() * starsCanvas.width,
+      y: Math.random() * starsCanvas.height,
+      r: Math.random() * 1.5,
+      speed: Math.random() * 0.3 + 0.05,
+      opacity: Math.random()
+    });
+  }
+}
+
+function drawStars() {
+  sCtx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+  stars.forEach(s => {
+    sCtx.beginPath();
+    sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    sCtx.fillStyle = `rgba(255,255,255,${s.opacity})`;
+    sCtx.fill();
+    s.y -= s.speed;
+    if (s.y < 0) { s.y = starsCanvas.height; s.x = Math.random() * starsCanvas.width; }
+    s.opacity = 0.3 + 0.7 * Math.sin(Date.now() * 0.001 + s.x);
+  });
+  requestAnimationFrame(drawStars);
+}
+
+initStars();
+drawStars();
+window.addEventListener('resize', initStars);
+
+// ===== GLOBAL STATE =====
+const AVATARS = ['🦊','🐼','🐸','🦁','🐯','🦋','🐙','🦄','🐺','🦖','🤖','👾','🧙','🧜','🦸','🐉'];
+const REACTIONS = ['❤️','😂','🔥','💯','👏','😱','🥳','💜','👀','⚡','🎯','✨'];
+
+let db, roomRef, myId, roomCode, myAvatar, myName;
+let gameState = {};
+let players = {};
+let scores = {};
+let currentGame = null;
+let localStream = null;
+let peerConnections = {};
+let isMicOn = false;
+let isHost = false;
+let isFirebaseConnected = false;
+
+// Local simulation mode (no Firebase)
+let localMode = false;
+let localMessages = [];
+let localPlayers = {};
+
+// ===== AVATAR PICKER =====
+function initAvatarPicker() {
+  const picker = document.getElementById('avatar-picker');
+  picker.innerHTML = '';
+  AVATARS.forEach((av, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'avatar-btn' + (i === 0 ? ' selected' : '');
+    btn.textContent = av;
+    btn.onclick = () => {
+      document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      myAvatar = av;
+    };
+    picker.appendChild(btn);
+  });
+  myAvatar = AVATARS[0];
+}
+
+initAvatarPicker();
+
+// ===== ROOM CODE =====
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+// ===== FIREBASE INIT =====
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ===== CREATE / JOIN =====
+function createRoom() {
+  myName = document.getElementById('player-name-input').value.trim() || 'Player';
+  myId = 'p_' + Date.now();
+  roomCode = generateCode();
+  isHost = true;
+  enterApp();
+}
+
+function joinRoom() {
+  myName = document.getElementById('player-name-input').value.trim() || 'Player';
+  myId = 'p_' + Date.now();
+  const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+  if (code.length !== 4) { showToast('⚠️ Enter a 4-letter room code!'); return; }
+  roomCode = code;
+  isHost = false;
+  enterApp();
+}
+
+function enterApp() {
+  localMode = true; // use local mode always for demo
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('room-code-display').textContent = roomCode;
+  document.getElementById('big-room-code').textContent = roomCode;
+  
+  // Add self
+  players[myId] = { name: myName, avatar: myAvatar, online: true };
+  scores[myId] = 0;
+  updatePlayersBar();
+  updateScoreboard();
+  
+  // Init sidebar stuff
+  initGamesPanel();
+  initReactionBar();
+  
+  showToast(`🎉 Welcome ${myAvatar} ${myName}! Share code: ${roomCode}`);
+  addSystemMsg(`${myAvatar} ${myName} joined the room!`);
+  
+  // Simulate a friend joining after 3 seconds for demo
+  setTimeout(() => {
+    const fakeId = 'friend_1';
+    const fakeAvatars = ['🦊','🐼','🐸','🦁','🐯','🦋'];
+    const fakeNames = ['Yuki', 'Rahul', 'Priya', 'Zara', 'Alex', 'Sana'];
+    const fa = fakeAvatars[Math.floor(Math.random()*fakeAvatars.length)];
+    const fn = fakeNames[Math.floor(Math.random()*fakeNames.length)];
+    players[fakeId] = { name: fn, avatar: fa, online: true };
+    scores[fakeId] = 0;
+    updatePlayersBar();
+    updateScoreboard();
+    addSystemMsg(`${fa} ${fn} joined! Room is ready 🎮`);
+    showToast(`${fa} ${fn} joined the room!`);
+    updateOnlineList();
+  }, 3000);
+  
+  updateOnlineList();
+}
+
+function updateOnlineList() {
+  const list = document.getElementById('online-players-list');
+  list.innerHTML = '';
+  Object.entries(players).forEach(([id, p]) => {
+    const row = document.createElement('div');
+    row.className = 'online-player-row';
+    row.innerHTML = `<div class="online-dot"></div><span style="font-size:1.2rem">${p.avatar}</span><span>${p.name}</span>${id === myId ? '<span style="font-size:0.75rem;color:var(--text-dim);margin-left:auto;">(you)</span>' : ''}`;
+    list.appendChild(row);
+  });
+}
+
+// ===== PLAYERS BAR =====
+function updatePlayersBar() {
+  const bar = document.getElementById('players-bar');
+  bar.innerHTML = '';
+  Object.entries(players).forEach(([id, p]) => {
+    const div = document.createElement('div');
+    div.className = 'player-avatar-mini';
+    div.id = `pav-${id}`;
+    div.innerHTML = `<span>${p.avatar}</span><div class="voice-ring"></div><div class="name-tag">${p.name}</div>`;
+    bar.appendChild(div);
+  });
+}
+
+// ===== GAMES LIST =====
+const GAMES = [
+  { id: 'ttt', icon: '⭕', name: 'Tic Tac Toe', desc: '2 players, classic X vs O', tag: '2P' },
+  { id: 'c4', icon: '🟡', name: 'Connect Four', desc: 'Drop chips, connect 4 to win', tag: '2P' },
+  { id: 'memory', icon: '🧩', name: 'Memory Flip', desc: 'Find matching pairs faster', tag: '2P+' },
+  { id: 'hangman', icon: '🔤', name: 'Word Guess', desc: 'Guess the hidden word together', tag: 'Co-op' },
+  { id: 'quiz', icon: '🧠', name: 'Trivia Quiz', desc: 'Who knows more? 10 questions', tag: '2P+' },
+  { id: 'math', icon: '⚡', name: 'Math Duel', desc: 'Solve math fastest to win', tag: '2P+' },
+  { id: 'draw', icon: '🎨', name: 'Draw Together', desc: 'Collaborative doodle canvas', tag: 'Co-op' },
+  { id: 'tod', icon: '🎲', name: 'Truth or Dare', desc: 'Fun challenges for friends', tag: '2P+' },
+  { id: 'wyr', icon: '🤔', name: 'Would You Rather', desc: 'Reveal your preferences', tag: '2P+' },
+  { id: 'dice', icon: '🎲', name: 'Dice Roll', desc: 'Roll dice, highest wins the round', tag: '2P+' },
+  { id: 'vibe', icon: '🎵', name: 'Music Vibe', desc: 'Match a song to the mood word', tag: '2P+' },
+  { id: 'snake', icon: '🐍', name: 'Snake Race', desc: 'Classic snake — compete on score', tag: 'Solo' },
+];
+
+function initGamesPanel() {
+  const list = document.getElementById('games-list');
+  list.innerHTML = '';
+  GAMES.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.id = `gc-${g.id}`;
+    card.innerHTML = `<div class="game-icon">${g.icon}</div><div class="game-info"><h4>${g.name}</h4><p>${g.desc}</p></div><div class="game-tag">${g.tag}</div>`;
+    card.onclick = () => loadGame(g.id);
+    list.appendChild(card);
+  });
+}
+
+function initReactionBar() {
+  const bar = document.getElementById('reaction-bar');
+  bar.innerHTML = '';
+  REACTIONS.forEach(r => {
+    const btn = document.createElement('div');
+    btn.className = 'quick-reaction';
+    btn.textContent = r;
+    btn.title = 'React';
+    btn.onclick = () => sendReaction(r);
+    bar.appendChild(btn);
+  });
+}
+
+// ===== CHAT =====
+function addSystemMsg(text) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg system';
+  div.textContent = '— ' + text + ' —';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addChatMsg(playerName, playerAvatar, text, msgId) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.id = 'msg-' + msgId;
+  const time = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  div.innerHTML = `
+    <div class="msg-avatar">${playerAvatar}</div>
+    <div class="msg-body">
+      <div class="msg-header">
+        <span class="msg-name">${playerName}</span>
+        <span class="msg-time">${time}</span>
+      </div>
+      <div class="msg-text">${text}</div>
+      <div class="msg-reactions" id="mr-${msgId}"></div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const msgId = Date.now();
+  addChatMsg(myName, myAvatar, text, msgId);
+  
+  // Simulate friend reply occasionally
+  if (Object.keys(players).length > 1 && Math.random() < 0.35) {
+    const friends = Object.entries(players).filter(([id]) => id !== myId);
+    if (friends.length > 0) {
+      const [fid, fp] = friends[Math.floor(Math.random()*friends.length)];
+      const replies = ['haha 😂', 'lol', '❤️', 'yes!!', 'omg really?', 'hahaha same', 'letsgo 🔥', 'niceee', '🥳', 'wait what', 'bro 💀', 'agreed!'];
+      setTimeout(() => {
+        addChatMsg(fp.name, fp.avatar, replies[Math.floor(Math.random()*replies.length)], Date.now());
+      }, 1000 + Math.random()*2000);
+    }
+  }
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+// ===== REACTIONS =====
+function sendReaction(emoji) {
+  spawnFloatEmoji(emoji, Math.random() * window.innerWidth * 0.8 + 0.1 * window.innerWidth, window.innerHeight * 0.7);
+  showToast(`${myAvatar} reacted ${emoji}`);
+  
+  // Friends also react sometimes
+  if (Object.keys(players).length > 1 && Math.random() < 0.5) {
+    const friends = Object.entries(players).filter(([id]) => id !== myId);
+    if (friends.length) {
+      const [_, fp] = friends[Math.floor(Math.random()*friends.length)];
+      setTimeout(() => {
+        spawnFloatEmoji(emoji, Math.random() * window.innerWidth * 0.8, window.innerHeight * 0.6);
+        showToast(`${fp.avatar} ${fp.name} also reacted ${emoji}`);
+      }, 500);
+    }
+  }
+}
+
+function spawnFloatEmoji(emoji, x, y) {
+  const container = document.getElementById('floating-reactions');
+  const el = document.createElement('div');
+  el.className = 'float-emoji';
+  el.textContent = emoji;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+function showFullscreenReaction() {
+  const panel = document.createElement('div');
+  panel.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(8,8,16,0.7);z-index:8000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;backdrop-filter:blur(4px);';
+  panel.innerHTML = `<div style="font-family:'Orbitron',monospace;color:var(--purple-light);font-size:1rem;letter-spacing:0.1em;">SEND REACTION</div><div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:400px;">` +
+    REACTIONS.map(r => `<div onclick="sendReaction('${r}');document.body.removeChild(this.closest('div[style]'))" style="font-size:2.5rem;cursor:pointer;padding:12px;border-radius:16px;background:var(--bg3);border:1px solid var(--border);transition:all 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">${r}</div>`).join('') +
+    `</div><div style="font-size:0.8rem;color:var(--text-dim);margin-top:8px;">Click anywhere to close</div>`;
+  panel.onclick = (e) => { if (e.target === panel) document.body.removeChild(panel); };
+  document.body.appendChild(panel);
+}
+
+// ===== TOAST =====
+function showToast(msg, duration = 3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, duration);
+}
+
+// ===== COPY ROOM CODE =====
+function copyRoomCode() {
+  navigator.clipboard.writeText(roomCode).then(() => showToast('✅ Room code copied!')).catch(() => showToast(`Room code: ${roomCode}`));
+}
+
+// ===== SIDEBAR =====
+function switchSidebar(panel, tab) {
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById('panel-' + panel).classList.add('active');
+}
+
+// ===== SCORE =====
+function addScore(playerId, pts) {
+  scores[playerId] = (scores[playerId] || 0) + pts;
+  updateScoreboard();
+}
+
+function updateScoreboard() {
+  const board = document.getElementById('scoreboard');
+  const sorted = Object.entries(scores).sort(([,a],[,b]) => b - a);
+  board.innerHTML = '<div style="padding:12px;font-size:0.75rem;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;">Leaderboard</div>';
+  const medals = ['🥇','🥈','🥉'];
+  sorted.forEach(([id, pts], i) => {
+    const p = players[id] || { name: 'Unknown', avatar: '❓' };
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `<div class="score-rank">${medals[i] || (i+1)}</div><div class="score-avatar">${p.avatar}</div><div class="score-name">${p.name}${id === myId ? ' (you)' : ''}</div><div class="score-pts">${pts} pts</div>`;
+    board.appendChild(row);
+  });
+}
+
+// ===== LOAD GAME =====
+function loadGame(gameId) {
+  currentGame = gameId;
+  document.querySelectorAll('.game-card').forEach(c => c.classList.remove('active'));
+  const gc = document.getElementById(`gc-${gameId}`);
+  if (gc) gc.classList.add('active');
+  
+  const g = GAMES.find(g => g.id === gameId);
+  document.getElementById('game-area-title').textContent = `${g.icon} ${g.name}`;
+  document.getElementById('game-score-display').innerHTML = '';
+  
+  const content = document.getElementById('game-content');
+  content.innerHTML = '';
+  
+  gameState = {};
+  
+  switch(gameId) {
+    case 'ttt': loadTicTacToe(); break;
+    case 'c4': loadConnectFour(); break;
+    case 'memory': loadMemory(); break;
+    case 'hangman': loadHangman(); break;
+    case 'quiz': loadQuiz(); break;
+    case 'math': loadMathDuel(); break;
+    case 'draw': loadDraw(); break;
+    case 'tod': loadTruthOrDare(); break;
+    case 'wyr': loadWouldYouRather(); break;
+    case 'dice': loadDice(); break;
+    case 'vibe': loadVibe(); break;
+    case 'snake': loadSnake(); break;
+  }
+  
+  switchSidebar('chat', document.querySelectorAll('.sidebar-tab')[0]);
+  addSystemMsg(`🎮 Started: ${g.name}`);
+}
+
+// ===== TIC TAC TOE =====
+function loadTicTacToe() {
+  const board = Array(9).fill(null);
+  let xIsNext = true;
+  const playerList = Object.keys(players);
+  const xPlayer = playerList[0];
+  const oPlayer = playerList[1] || playerList[0];
+  
+  gameState = { board, xIsNext };
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+    <div id="ttt-status" style="font-size:1rem;color:var(--cyan);">Your turn as ❌</div>
+    <div class="ttt-board" id="ttt-board"></div>
+    <button class="btn btn-secondary" style="width:auto;padding:10px 24px;" onclick="loadTicTacToe()">🔄 New Game</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  renderTTT(board, null);
+  
+  function renderTTT(board, winner) {
+    const b = document.getElementById('ttt-board');
+    b.innerHTML = '';
+    board.forEach((cell, i) => {
+      const c = document.createElement('div');
+      c.className = 'ttt-cell' + (cell ? ' ' + cell : '');
+      c.textContent = cell === 'X' ? '❌' : cell === 'O' ? '⭕' : '';
+      if (!cell && !winner) {
+        c.onclick = () => makeMove(i);
+      }
+      b.appendChild(c);
+    });
+  }
+  
+  function makeMove(i) {
+    if (gameState.board[i] || gameState.winner) return;
+    const symbol = gameState.xIsNext ? 'X' : 'O';
+    gameState.board[i] = symbol;
+    gameState.xIsNext = !gameState.xIsNext;
+    
+    const winner = checkTTTWinner(gameState.board);
+    if (winner) {
+      gameState.winner = winner;
+      renderTTT(gameState.board, winner);
+      highlightWin(gameState.board, winner);
+      const winnerName = winner === 'X' ? (players[Object.keys(players)[0]]?.name || 'Player 1') : (players[Object.keys(players)[1]]?.name || players[Object.keys(players)[0]]?.name);
+      setTimeout(() => showResult('🏆', `${winner === 'X' ? '❌' : '⭕'} Wins!`, `${winnerName} is the champion!`), 400);
+      addScore(winner === 'X' ? Object.keys(players)[0] : (Object.keys(players)[1] || Object.keys(players)[0]), 10);
+    } else if (gameState.board.every(Boolean)) {
+      renderTTT(gameState.board, null);
+      showResult('🤝', "It's a Draw!", "Great game! Nobody wins this round.");
+    } else {
+      renderTTT(gameState.board, null);
+      document.getElementById('ttt-status').textContent = `${gameState.xIsNext ? '❌' : '⭕'} ${gameState.xIsNext ? "X's" : "O's"} turn`;
+    }
+  }
+  
+  function highlightWin(board, winner) {
+    const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    for (const combo of wins) {
+      if (combo.every(i => board[i] === winner)) {
+        const cells = document.querySelectorAll('.ttt-cell');
+        combo.forEach(i => cells[i].classList.add('win'));
+        return;
+      }
+    }
+  }
+}
+
+function checkTTTWinner(board) {
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (const [a,b,c] of lines) {
+    if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+  }
+  return null;
+}
+
+// ===== CONNECT FOUR =====
+function loadConnectFour() {
+  const ROWS = 6, COLS = 7;
+  const board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+  let currentPlayer = 1;
+  gameState = { board, currentPlayer, gameOver: false };
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+    <div id="c4-status" style="font-size:1rem;color:var(--cyan);">🔵 Player 1 (You) — Drop a chip!</div>
+    <div class="c4-board" id="c4-board"></div>
+    <button class="btn btn-secondary" style="width:auto;padding:10px 24px;" onclick="loadConnectFour()">🔄 New Game</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  renderC4();
+  
+  function renderC4() {
+    const b = document.getElementById('c4-board');
+    b.innerHTML = '';
+    gameState.board.forEach((row, r) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'c4-row';
+      row.forEach((cell, c) => {
+        const cellEl = document.createElement('div');
+        cellEl.className = 'c4-cell' + (cell === 1 ? ' p1' : cell === 2 ? ' p2' : '');
+        if (!gameState.gameOver) cellEl.onclick = () => dropChip(c);
+        rowEl.appendChild(cellEl);
+      });
+      b.appendChild(rowEl);
+    });
+  }
+  
+  function dropChip(col) {
+    if (gameState.gameOver) return;
+    let row = -1;
+    for (let r = ROWS-1; r >= 0; r--) {
+      if (!gameState.board[r][col]) { row = r; break; }
+    }
+    if (row === -1) return;
+    
+    gameState.board[row][col] = gameState.currentPlayer;
+    renderC4();
+    
+    if (checkC4Win(gameState.board, row, col, gameState.currentPlayer)) {
+      gameState.gameOver = true;
+      const winner = gameState.currentPlayer === 1 ? (players[Object.keys(players)[0]]?.name || 'Player 1') : (players[Object.keys(players)[1]]?.name || 'Player 2');
+      setTimeout(() => showResult('🏆', `Player ${gameState.currentPlayer} Wins!`, `${winner} connected four! Amazing!`), 300);
+      addScore(Object.keys(players)[gameState.currentPlayer - 1] || Object.keys(players)[0], 15);
+    } else {
+      gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+      const p = gameState.currentPlayer === 1 ? '🔵' : '🔴';
+      document.getElementById('c4-status').textContent = `${p} Player ${gameState.currentPlayer}'s turn`;
+    }
+  }
+  
+  function checkC4Win(board, row, col, player) {
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    return dirs.some(([dr, dc]) => {
+      let count = 1;
+      for (let dir of [1,-1]) {
+        let r = row + dr*dir, c = col + dc*dir;
+        while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+          count++; r += dr*dir; c += dc*dir;
+        }
+      }
+      return count >= 4;
+    });
+  }
+}
+
+// ===== MEMORY FLIP =====
+function loadMemory() {
+  const emojis = ['🦊','🐼','🐸','🦁','🐯','🦋','🐙','🦄'];
+  const cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5).map((e, i) => ({emoji: e, id: i, flipped: false, matched: false}));
+  let flippedIds = [];
+  let matchCount = 0;
+  let myMatches = 0, opMatches = 0;
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+    <div id="mem-status" style="font-size:0.9rem;color:var(--cyan);">🧩 Find all matching pairs!</div>
+    <div id="mem-score" style="font-size:0.85rem;color:var(--text-dim);">You: 0 | Friend: 0</div>
+    <div class="memory-board" id="mem-board"></div>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  renderMem();
+  
+  function renderMem() {
+    const b = document.getElementById('mem-board');
+    b.innerHTML = '';
+    cards.forEach(card => {
+      const c = document.createElement('div');
+      c.className = 'mem-card' + (card.flipped ? ' flipped' : '') + (card.matched ? ' matched' : '');
+      c.innerHTML = `<div class="front">❓</div><div class="back">${card.emoji}</div>`;
+      if (!card.flipped && !card.matched) c.onclick = () => flipCard(card.id);
+      b.appendChild(c);
+    });
+  }
+  
+  function flipCard(id) {
+    if (flippedIds.length >= 2) return;
+    const card = cards[id];
+    if (card.flipped || card.matched) return;
+    card.flipped = true;
+    flippedIds.push(id);
+    renderMem();
+    
+    if (flippedIds.length === 2) {
+      const [a, b] = flippedIds;
+      if (cards[a].emoji === cards[b].emoji) {
+        cards[a].matched = cards[b].matched = true;
+        flippedIds = [];
+        matchCount++;
+        myMatches++;
+        document.getElementById('mem-score').textContent = `You: ${myMatches} | Friend: ${opMatches}`;
+        renderMem();
+        showToast('✅ Match! +5 points');
+        addScore(myId, 5);
+        if (matchCount === emojis.length) {
+          setTimeout(() => showResult('🎉', 'All Matched!', `You: ${myMatches} | Friend: ${opMatches} — Well played!`), 300);
+        }
+      } else {
+        setTimeout(() => {
+          cards[a].flipped = cards[b].flipped = false;
+          flippedIds = [];
+          renderMem();
+        }, 900);
+      }
+    }
+  }
+}
+
+// ===== WORD GUESS (HANGMAN) =====
+const WORD_LIST = [
+  {word:'BUTTERFLY', hint:'🦋 It flies'},
+  {word:'GALAXY', hint:'🌌 Space stuff'},
+  {word:'JAVASCRIPT', hint:'💻 Programming language'},
+  {word:'WATERFALL', hint:'🌊 Nature beauty'},
+  {word:'DRAGON', hint:'🐉 Mythical creature'},
+  {word:'RAINBOW', hint:'🌈 After rain'},
+  {word:'CHOCOLATE', hint:'🍫 Sweet treat'},
+  {word:'VOLCANO', hint:'🌋 Hot mountain'},
+  {word:'ASTRONAUT', hint:'🚀 Space person'},
+  {word:'ELEPHANT', hint:'🐘 Big animal'},
+];
+
+function loadHangman() {
+  const chosen = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+  const word = chosen.word;
+  let guessed = new Set();
+  let wrong = 0;
+  const maxWrong = 6;
+  const HANGMAN_STAGES = ['😊','😐','😟','😰','😨','😱','💀'];
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="word-game">
+    <div style="font-size:3rem" id="hang-emoji">${HANGMAN_STAGES[0]}</div>
+    <div style="font-size:0.85rem;color:var(--text-dim);">Hint: ${chosen.hint}</div>
+    <div class="word-display" id="word-display"></div>
+    <div id="wrong-letters" style="color:var(--red);font-size:0.85rem;min-height:20px;"></div>
+    <div class="keyboard" id="hang-keyboard"></div>
+    <button class="btn btn-secondary" style="width:auto;padding:10px 24px;" onclick="loadHangman()">🔄 New Word</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  renderWord();
+  renderKeyboard();
+  
+  function renderWord() {
+    const disp = document.getElementById('word-display');
+    disp.innerHTML = '';
+    word.split('').forEach(ch => {
+      const span = document.createElement('div');
+      span.className = 'word-letter' + (guessed.has(ch) ? ' revealed' : '');
+      span.textContent = guessed.has(ch) ? ch : '';
+      disp.appendChild(span);
+    });
+  }
+  
+  function renderKeyboard() {
+    const kb = document.getElementById('hang-keyboard');
+    kb.innerHTML = '';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch => {
+      const btn = document.createElement('button');
+      btn.className = 'key-btn';
+      btn.textContent = ch;
+      if (guessed.has(ch)) {
+        btn.className += word.includes(ch) ? ' correct' : ' wrong';
+        btn.disabled = true;
+      }
+      btn.onclick = () => guess(ch);
+      kb.appendChild(btn);
+    });
+  }
+  
+  function guess(ch) {
+    guessed.add(ch);
+    if (!word.includes(ch)) {
+      wrong++;
+      document.getElementById('hang-emoji').textContent = HANGMAN_STAGES[Math.min(wrong, HANGMAN_STAGES.length-1)];
+    }
+    renderWord();
+    renderKeyboard();
+    document.getElementById('wrong-letters').textContent = `Wrong: ${wrong}/${maxWrong}`;
+    
+    const won = word.split('').every(c => guessed.has(c));
+    if (won) {
+      setTimeout(() => { showResult('🎉', 'Word Guessed!', `The word was "${word}" — Amazing!`); addScore(myId, 20); }, 300);
+    } else if (wrong >= maxWrong) {
+      setTimeout(() => showResult('💀', 'Game Over!', `The word was "${word}" — Better luck next time!`), 300);
+    }
+  }
+}
+
+// ===== TRIVIA QUIZ =====
+const QUIZ_QUESTIONS = [
+  { q: 'What is the capital of Japan?', opts: ['Seoul', 'Beijing', 'Tokyo', 'Bangkok'], ans: 2 },
+  { q: 'How many planets are in our solar system?', opts: ['7', '8', '9', '10'], ans: 1 },
+  { q: 'What does HTML stand for?', opts: ['Hyper Text Markup Language', 'High Tech Modern Language', 'Hyper Transfer Markup Link', 'None'], ans: 0 },
+  { q: 'What is 7 × 8?', opts: ['54', '56', '58', '64'], ans: 1 },
+  { q: 'Which gas do plants absorb?', opts: ['Oxygen', 'Nitrogen', 'Carbon Dioxide', 'Helium'], ans: 2 },
+  { q: 'Who painted the Mona Lisa?', opts: ['Van Gogh', 'Picasso', 'Da Vinci', 'Rembrandt'], ans: 2 },
+  { q: 'What is the largest ocean?', opts: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], ans: 3 },
+  { q: 'What year did World War 2 end?', opts: ['1943', '1944', '1945', '1946'], ans: 2 },
+  { q: 'What language is spoken in Brazil?', opts: ['Spanish', 'Portuguese', 'French', 'Brazilian'], ans: 1 },
+  { q: '√144 = ?', opts: ['11', '12', '13', '14'], ans: 1 },
+];
+
+function loadQuiz() {
+  const shuffled = [...QUIZ_QUESTIONS].sort(() => Math.random() - 0.5).slice(0, 7);
+  let qi = 0;
+  let myScore = 0;
+  let timerInterval;
+  let timeLeft = 15;
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="quiz-game">
+    <div style="display:flex;justify-content:space-between;width:100%;font-size:0.8rem;color:var(--text-dim);">
+      <span id="q-counter">Question 1/${shuffled.length}</span>
+      <span id="q-timer" style="color:var(--yellow);">⏱ 15s</span>
+    </div>
+    <div class="quiz-timer-bar"><div class="quiz-timer-fill" id="timer-fill" style="width:100%"></div></div>
+    <div class="quiz-question" id="quiz-question"></div>
+    <div class="quiz-options" id="quiz-options"></div>
+    <div id="quiz-feedback" style="min-height:28px;text-align:center;font-size:0.9rem;"></div>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  renderQ();
+  
+  function renderQ() {
+    clearInterval(timerInterval);
+    timeLeft = 15;
+    const q = shuffled[qi];
+    document.getElementById('q-counter').textContent = `Question ${qi+1}/${shuffled.length}`;
+    document.getElementById('quiz-question').textContent = q.q;
+    document.getElementById('quiz-feedback').textContent = '';
+    
+    const opts = document.getElementById('quiz-options');
+    opts.innerHTML = '';
+    q.opts.forEach((opt, i) => {
+      const btn = document.createElement('div');
+      btn.className = 'quiz-option';
+      btn.textContent = opt;
+      btn.onclick = () => answer(i, btn);
+      opts.appendChild(btn);
+    });
+    
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      document.getElementById('q-timer').textContent = `⏱ ${timeLeft}s`;
+      document.getElementById('timer-fill').style.width = (timeLeft / 15 * 100) + '%';
+      if (timeLeft <= 0) { clearInterval(timerInterval); autoAnswer(); }
+    }, 1000);
+  }
+  
+  function answer(i, btn) {
+    clearInterval(timerInterval);
+    const q = shuffled[qi];
+    const opts = document.querySelectorAll('.quiz-option');
+    opts.forEach(o => o.classList.add('disabled'));
+    
+    if (i === q.ans) {
+      btn.classList.add('correct');
+      const pts = Math.max(5, timeLeft * 2);
+      myScore += pts;
+      addScore(myId, pts);
+      document.getElementById('quiz-feedback').innerHTML = `<span style="color:var(--green);">✅ Correct! +${pts} pts</span>`;
+    } else {
+      btn.classList.add('wrong');
+      opts[q.ans].classList.add('correct');
+      document.getElementById('quiz-feedback').innerHTML = `<span style="color:var(--red);">❌ Wrong! Answer was: ${q.opts[q.ans]}</span>`;
+    }
+    
+    setTimeout(nextQ, 1800);
+  }
+  
+  function autoAnswer() {
+    const opts = document.querySelectorAll('.quiz-option');
+    opts.forEach(o => o.classList.add('disabled'));
+    opts[shuffled[qi].ans].classList.add('correct');
+    document.getElementById('quiz-feedback').innerHTML = `<span style="color:var(--yellow);">⏰ Time's up!</span>`;
+    setTimeout(nextQ, 1500);
+  }
+  
+  function nextQ() {
+    qi++;
+    if (qi >= shuffled.length) {
+      showResult('🧠', 'Quiz Complete!', `You scored ${myScore} points — Well done!`);
+    } else {
+      renderQ();
+    }
+  }
+}
+
+// ===== MATH DUEL =====
+function loadMathDuel() {
+  let round = 0;
+  const maxRounds = 8;
+  let myTotal = 0;
+  let ops = ['+','-','×','÷'];
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="math-game">
+    <div style="font-size:0.85rem;color:var(--text-dim);" id="math-round">Round 1/${maxRounds}</div>
+    <div class="math-problem" id="math-problem">?</div>
+    <div id="math-result" style="min-height:24px;font-size:1rem;text-align:center;"></div>
+    <div class="math-answer-row">
+      <input class="math-input" id="math-input" type="number" placeholder="?" onkeydown="if(event.key==='Enter')submitMath()">
+      <button class="math-submit" onclick="submitMath()">⚡ GO</button>
+    </div>
+    <div style="font-size:0.85rem;color:var(--text-dim);">Score: <span id="math-score" style="color:var(--cyan);font-family:'Orbitron',monospace;">0</span></div>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  window.submitMath = submitMath;
+  newMathQ();
+  
+  function newMathQ() {
+    if (round >= maxRounds) {
+      showResult('⚡', 'Math Duel Done!', `You scored ${myTotal} points! Lightning fast!`);
+      return;
+    }
+    round++;
+    document.getElementById('math-round').textContent = `Round ${round}/${maxRounds}`;
+    document.getElementById('math-result').textContent = '';
+    document.getElementById('math-input').value = '';
+    document.getElementById('math-input').focus();
+    
+    let a, b, op, ans;
+    const difficulty = Math.min(Math.floor(round/3), 3);
+    
+    if (difficulty === 0) { op = '+'; a = rnd(20); b = rnd(20); ans = a+b; }
+    else if (difficulty === 1) { op = ops[rnd(2,0)]; a = rnd(50); b = rnd(50); ans = op==='+' ? a+b : a-b; if(ans<0){a+=Math.abs(ans)+1; ans=a-b;} }
+    else if (difficulty === 2) { op = '×'; a = rnd(12,1); b = rnd(12,1); ans = a*b; }
+    else { op = '÷'; b = rnd(10,1); ans = rnd(12,1); a = b*ans; }
+    
+    gameState.mathAns = ans;
+    document.getElementById('math-problem').textContent = `${a} ${op} ${b} = ?`;
+  }
+  
+  function submitMath() {
+    const val = parseInt(document.getElementById('math-input').value);
+    if (isNaN(val)) return;
+    
+    if (val === gameState.mathAns) {
+      const pts = 10;
+      myTotal += pts;
+      addScore(myId, pts);
+      document.getElementById('math-score').textContent = myTotal;
+      document.getElementById('math-result').innerHTML = `<span style="color:var(--green);">✅ Correct! +${pts}</span>`;
+      spawnFloatEmoji('⚡', Math.random() * 400 + 200, 300);
+    } else {
+      document.getElementById('math-result').innerHTML = `<span style="color:var(--red);">❌ Answer was ${gameState.mathAns}</span>`;
+    }
+    setTimeout(newMathQ, 1200);
+  }
+}
+
+function rnd(max, min=0) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+// ===== DRAW TOGETHER =====
+function loadDraw() {
+  const div = document.createElement('div');
+  div.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;">
+    <div class="draw-tools" id="draw-tools">
+      ${['#000000','#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#ffffff'].map(c => `<div class="color-dot" style="background:${c}" data-color="${c}" onclick="setDrawColor('${c}', this)"></div>`).join('')}
+      <div style="width:1px;height:28px;background:var(--border);"></div>
+      <button class="brush-btn active" onclick="setDrawSize(4,this)">S</button>
+      <button class="brush-btn" onclick="setDrawSize(10,this)">M</button>
+      <button class="brush-btn" onclick="setDrawSize(20,this)">L</button>
+      <button class="brush-btn" style="color:var(--red)" onclick="clearDraw()">🗑</button>
+    </div>
+    <canvas id="draw-canvas" width="600" height="380" style="max-width:calc(100vw - 320px);max-height:50vh;"></canvas>
+    <div style="font-size:0.8rem;color:var(--text-dim);">Draw together! 🎨 (Friend's strokes appear in real-time)</div>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  const canvas = document.getElementById('draw-canvas');
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let color = '#8b5cf6';
+  let size = 4;
+  
+  document.querySelectorAll('.color-dot')[0].classList.remove('selected');
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  document.querySelector('[data-color="#8b5cf6"]').classList.add('selected');
+  
+  window.setDrawColor = (c, el) => {
+    color = c;
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+  };
+  
+  window.setDrawSize = (s, el) => {
+    size = s;
+    document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  };
+  
+  window.clearDraw = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); };
+  
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return {
+      x: (src.clientX - r.left) * (canvas.width / r.width),
+      y: (src.clientY - r.top) * (canvas.height / r.height)
+    };
+  }
+  
+  canvas.onmousedown = canvas.ontouchstart = (e) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  canvas.onmousemove = canvas.ontouchmove = (e) => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); };
+  canvas.onmouseup = canvas.ontouchend = () => { drawing = false; };
+  canvas.onmouseleave = () => { drawing = false; };
+  
+  // Simulate friend drawing occasionally
+  setTimeout(() => simulateFriendDraw(ctx, canvas), 2000);
+}
+
+function simulateFriendDraw(ctx, canvas) {
+  if (!canvas) return;
+  const colors = ['#06b6d4','#ec4899','#10b981','#f59e0b'];
+  const c = colors[Math.floor(Math.random()*colors.length)];
+  ctx.strokeStyle = c;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  
+  let x = Math.random() * canvas.width * 0.6 + canvas.width * 0.2;
+  let y = Math.random() * canvas.height * 0.6 + canvas.height * 0.2;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  
+  let steps = 0;
+  const draw = setInterval(() => {
+    x += (Math.random()-0.5)*30;
+    y += (Math.random()-0.5)*30;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    steps++;
+    if (steps > 20) clearInterval(draw);
+  }, 50);
+}
+
+// ===== TRUTH OR DARE =====
+const TRUTHS = [
+  "What's your most embarrassing moment?",
+  "Who was your first crush?",
+  "What's a secret you've never told anyone?",
+  "What's the most childish thing you still do?",
+  "What's your biggest fear?",
+  "What's the worst lie you've ever told?",
+  "What's something you'd never tell your parents?",
+  "What's your most weird habit?",
+  "Who do you think about before sleeping?",
+  "What's your biggest regret so far?",
+];
+
+const DARES = [
+  "Send a voice note saying 'I love you' to someone",
+  "Change your profile pic to the silliest photo of yourself",
+  "Send a screenshot of your recently played songs",
+  "Do 10 push-ups right now",
+  "Send the most cringe message you can to this group",
+  "Text your crush 'hey' right now",
+  "Post a throwback photo on your story",
+  "Share your most embarrassing photo with the group",
+  "Record yourself doing your best dance move",
+  "Send the 5th photo in your gallery to this chat",
+];
+
+function loadTruthOrDare() {
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="tod-game">
+    <div style="font-size:1.2rem;font-weight:600;">Pick your challenge! 🎲</div>
+    <div class="tod-card" id="tod-card">Click Truth or Dare to begin...</div>
+    <div id="tod-player" style="font-size:0.85rem;color:var(--text-dim);"></div>
+    <div class="tod-btns">
+      <button class="tod-btn truth-btn" onclick="pickTOD('truth')">🤍 Truth</button>
+      <button class="tod-btn dare-btn" onclick="pickTOD('dare')">🔥 Dare</button>
+    </div>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  const playerList = Object.values(players);
+  let todTurn = 0;
+  
+  window.pickTOD = (type) => {
+    const p = playerList[todTurn % playerList.length];
+    todTurn++;
+    const list = type === 'truth' ? TRUTHS : DARES;
+    const text = list[Math.floor(Math.random() * list.length)];
+    const card = document.getElementById('tod-card');
+    card.className = `tod-card ${type}`;
+    card.textContent = text;
+    document.getElementById('tod-player').textContent = `Challenge for: ${p.avatar} ${p.name}`;
+    spawnFloatEmoji(type === 'truth' ? '🤍' : '🔥', Math.random() * 600 + 100, 400);
+  };
+}
+
+// ===== WOULD YOU RATHER =====
+const WYR_QUESTIONS = [
+  { a: "Be able to fly", b: "Be invisible anytime" },
+  { a: "Have unlimited money", b: "Have unlimited time" },
+  { a: "Always speak the truth", b: "Never have to tell the truth" },
+  { a: "Live in the city", b: "Live in nature" },
+  { a: "Be famous but lonely", b: "Be unknown but loved" },
+  { a: "Have super strength", b: "Have super intelligence" },
+  { a: "Travel the world alone", b: "Stay home with loved ones" },
+  { a: "Never use phone again", b: "Never eat junk food again" },
+  { a: "Be 10 years older", b: "Be 10 years younger" },
+  { a: "Know when you'll die", b: "Know how you'll die" },
+];
+
+function loadWouldYouRather() {
+  let qi = 0;
+  let votes = {};
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="wyr-game">
+    <div class="wyr-question" id="wyr-question">Would you rather...</div>
+    <div class="wyr-options">
+      <div class="wyr-opt" id="wyr-a" onclick="voteWYR('a')"></div>
+      <div style="font-weight:700;color:var(--text-dim);font-size:1.2rem;flex-shrink:0;">OR</div>
+      <div class="wyr-opt" id="wyr-b" onclick="voteWYR('b')"></div>
+    </div>
+    <div id="wyr-voted" style="min-height:40px;"></div>
+    <button class="btn btn-secondary" style="width:auto;padding:10px 24px;" onclick="nextWYR()">Next Question ➡️</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  window.voteWYR = (choice) => {
+    votes[myId] = choice;
+    
+    // Simulate friend vote
+    const friendIds = Object.keys(players).filter(id => id !== myId);
+    friendIds.forEach(fid => {
+      votes[fid] = Math.random() < 0.5 ? 'a' : 'b';
+    });
+    
+    const totalA = Object.values(votes).filter(v => v === 'a').length;
+    const totalB = Object.values(votes).filter(v => v === 'b').length;
+    const total = totalA + totalB;
+    
+    document.getElementById('wyr-a').classList.toggle('selected-a', choice === 'a');
+    document.getElementById('wyr-b').classList.toggle('selected-b', choice === 'b');
+    
+    const pctA = total ? Math.round(totalA/total*100) : 0;
+    const pctB = 100 - pctA;
+    
+    document.getElementById('wyr-voted').innerHTML = `
+      <div class="wyr-results">
+        <div class="wyr-bar-wrap"><div class="wyr-bar-label">${pctA}% chose A</div><div class="wyr-bar"><div class="wyr-bar-fill-a" style="width:${pctA}%"></div></div></div>
+        <div class="wyr-bar-wrap"><div class="wyr-bar-label">${pctB}% chose B</div><div class="wyr-bar"><div class="wyr-bar-fill-b" style="width:${pctB}%"></div></div></div>
+      </div>`;
+    addScore(myId, 3);
+  };
+  
+  window.nextWYR = () => {
+    qi = (qi + 1) % WYR_QUESTIONS.length;
+    votes = {};
+    renderWYR();
+  };
+  
+  function renderWYR() {
+    const q = WYR_QUESTIONS[qi];
+    document.getElementById('wyr-question').textContent = 'Would you rather...';
+    document.getElementById('wyr-a').textContent = q.a;
+    document.getElementById('wyr-a').className = 'wyr-opt';
+    document.getElementById('wyr-b').textContent = q.b;
+    document.getElementById('wyr-b').className = 'wyr-opt';
+    document.getElementById('wyr-voted').innerHTML = '';
+  }
+  
+  renderWYR();
+}
+
+// ===== DICE ROLL =====
+const DICE_FACES = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+function loadDice() {
+  let round = 0; let myTotal = 0; let opTotal = 0;
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="dice-game">
+    <div style="font-size:1rem;color:var(--text-dim);">Roll the dice — highest wins the round!</div>
+    <div class="dice" id="my-dice">⚄</div>
+    <div style="font-size:0.85rem;color:var(--text-dim);">Your dice (tap to roll)</div>
+    <div id="dice-result" style="font-size:1.1rem;min-height:28px;"></div>
+    <div id="dice-score" style="font-size:0.85rem;color:var(--text-dim);">You: 0 wins | Friend: 0 wins | Round: 0/7</div>
+    <button class="btn btn-primary" style="width:auto;padding:14px 32px;" onclick="rollDice()">🎲 Roll!</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  window.rollDice = () => {
+    if (round >= 7) return;
+    round++;
+    const myRoll = Math.floor(Math.random() * 6);
+    const opRoll = Math.floor(Math.random() * 6);
+    
+    const dice = document.getElementById('my-dice');
+    dice.classList.add('rolling');
+    setTimeout(() => {
+      dice.classList.remove('rolling');
+      dice.textContent = DICE_FACES[myRoll];
+      
+      let result, pts;
+      const friendName = Object.values(players).find(p => players[myId] !== p)?.name || 'Friend';
+      if (myRoll > opRoll) { result = `🏆 You win! You: ${myRoll+1} vs ${friendName}: ${opRoll+1}`; myTotal++; pts = 5; addScore(myId, pts); }
+      else if (opRoll > myRoll) { result = `😅 ${friendName} wins! You: ${myRoll+1} vs ${friendName}: ${opRoll+1}`; opTotal++; }
+      else { result = `🤝 Tie! Both rolled ${myRoll+1}`; addScore(myId, 2); }
+      
+      document.getElementById('dice-result').textContent = result;
+      document.getElementById('dice-score').textContent = `You: ${myTotal} wins | ${friendName}: ${opTotal} wins | Round: ${round}/7`;
+      
+      if (round >= 7) {
+        setTimeout(() => {
+          const winner = myTotal > opTotal ? 'You win! 🎉' : opTotal > myTotal ? `${friendName} wins!` : "It's a tie!";
+          showResult('🎲', 'Dice Duel Over!', `${winner} Final: You ${myTotal} - ${opTotal} ${friendName}`);
+        }, 800);
+      }
+    }, 700);
+  };
+}
+
+// ===== MUSIC VIBE =====
+const VIBE_WORDS = ['NOSTALGIA','HYPE','HEARTBREAK','PEACE','POWER','ROMANCE','CHAOS','JOY','LONGING','REBELLION','DREAM','FIRE'];
+
+function loadVibe() {
+  let round = 0; const maxRounds = 5;
+  let revealed = [];
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div class="vibe-game">
+    <div style="font-size:0.85rem;color:var(--text-dim);">Share a song that matches this vibe! 🎵</div>
+    <div class="vibe-word" id="vibe-word">?</div>
+    <input class="vibe-input" id="vibe-input" placeholder="Artist - Song name..." onkeydown="if(event.key==='Enter')submitVibe()">
+    <button class="btn btn-primary" style="width:auto;padding:12px 28px;" onclick="submitVibe()">Submit 🎵</button>
+    <div class="vibe-answers" id="vibe-answers"></div>
+    <button class="btn btn-secondary" style="width:auto;padding:10px 24px;" onclick="nextVibe()">Next Vibe ➡️</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  nextVibe();
+  
+  window.nextVibe = () => {
+    round = (round + 1) % VIBE_WORDS.length;
+    document.getElementById('vibe-word').textContent = VIBE_WORDS[round];
+    document.getElementById('vibe-input').value = '';
+    revealed = [];
+    document.getElementById('vibe-answers').innerHTML = '';
+  };
+  
+  window.submitVibe = () => {
+    const val = document.getElementById('vibe-input').value.trim();
+    if (!val) return;
+    
+    const row = document.createElement('div');
+    row.className = 'vibe-ans-row';
+    row.innerHTML = `<span>${myAvatar} ${myName}</span><span style="color:var(--purple-light);">${val}</span>`;
+    document.getElementById('vibe-answers').appendChild(row);
+    document.getElementById('vibe-input').value = '';
+    addScore(myId, 5);
+    showToast('🎵 Submitted! +5 points');
+    spawnFloatEmoji('🎵', Math.random()*400+100, 300);
+    
+    // Friend submits too
+    const friendIds = Object.keys(players).filter(id => id !== myId);
+    if (friendIds.length) {
+      const fp = players[friendIds[0]];
+      const friendSongs = ['Drake - God\'s Plan', 'BTS - Dynamite', 'Arijit Singh - Tum Hi Ho', 'The Weeknd - Blinding Lights', 'Eminem - Lose Yourself', 'Coldplay - Yellow', 'Taylor Swift - Blank Space'];
+      setTimeout(() => {
+        const row2 = document.createElement('div');
+        row2.className = 'vibe-ans-row';
+        row2.innerHTML = `<span>${fp.avatar} ${fp.name}</span><span style="color:var(--pink);">${friendSongs[Math.floor(Math.random()*friendSongs.length)]}</span>`;
+        document.getElementById('vibe-answers').appendChild(row2);
+      }, 1500 + Math.random()*2000);
+    }
+  };
+}
+
+// ===== SNAKE =====
+function loadSnake() {
+  const SIZE = 20, COLS = 20, ROWS = 15;
+  
+  const div = document.createElement('div');
+  div.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+    <div style="font-size:0.85rem;color:var(--text-dim);">Use arrow keys or WASD to control 🐍</div>
+    <canvas id="snake-canvas" width="${COLS*SIZE}" height="${ROWS*SIZE}"></canvas>
+    <div id="snake-score" style="font-family:'Orbitron',monospace;color:var(--cyan);">Score: 0</div>
+    <button class="btn btn-secondary" style="width:auto;padding:10px 24px;" onclick="loadSnake()">🔄 New Game</button>
+  </div>`;
+  document.getElementById('game-content').appendChild(div);
+  
+  const canvas = document.getElementById('snake-canvas');
+  const ctx = canvas.getContext('2d');
+  let snake = [{x:10,y:7},{x:9,y:7},{x:8,y:7}];
+  let dir = {x:1,y:0};
+  let food = {x:15, y:7};
+  let score = 0;
+  let alive = true;
+  let interval;
+  
+  document.onkeydown = (e) => {
+    if (e.key==='ArrowUp'||e.key==='w') { if(dir.y!==1) dir={x:0,y:-1}; }
+    else if (e.key==='ArrowDown'||e.key==='s') { if(dir.y!==-1) dir={x:0,y:1}; }
+    else if (e.key==='ArrowLeft'||e.key==='a') { if(dir.x!==1) dir={x:-1,y:0}; }
+    else if (e.key==='ArrowRight'||e.key==='d') { if(dir.x!==-1) dir={x:1,y:0}; }
+  };
+  
+  function placeFood() {
+    food = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
+  }
+  
+  function step() {
+    if (!alive) return;
+    const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+    
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS || snake.some(s => s.x === head.x && s.y === head.y)) {
+      alive = false;
+      clearInterval(interval);
+      showResult('💀', 'Snake Dead!', `You scored ${score} points! Play again?`);
+      addScore(myId, score);
+      return;
+    }
+    
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      document.getElementById('snake-score').textContent = 'Score: ' + score;
+      placeFood();
+    } else {
+      snake.pop();
+    }
+    
+    ctx.fillStyle = '#080810';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw food
+    ctx.fillStyle = '#ec4899';
+    ctx.shadowColor = '#ec4899';
+    ctx.shadowBlur = 10;
+    ctx.fillRect(food.x*SIZE+2, food.y*SIZE+2, SIZE-4, SIZE-4);
+    ctx.shadowBlur = 0;
+    
+    // Draw snake
+    snake.forEach((s, i) => {
+      const t = i / snake.length;
+      ctx.fillStyle = `hsl(${180 + t*100}, 80%, ${60-t*20}%)`;
+      ctx.fillRect(s.x*SIZE+1, s.y*SIZE+1, SIZE-2, SIZE-2);
+    });
+  }
+  
+  interval = setInterval(step, 130);
+}
+
+// ===== MIC (Voice Chat) =====
+async function toggleMic() {
+  const btn = document.getElementById('mic-btn');
+  if (!isMicOn) {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      isMicOn = true;
+      btn.className = 'icon-btn mic-on';
+      btn.textContent = '🎙️';
+      showToast('🎙️ Mic ON — Voice chat active!');
+      addSystemMsg('🎙️ ' + myName + ' turned on voice chat');
+      document.getElementById(`pav-${myId}`)?.classList.add('speaking');
+    } catch(e) {
+      showToast('⚠️ Mic access denied. Check browser permissions.');
+    }
+  } else {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+    isMicOn = false;
+    btn.className = 'icon-btn mic-off';
+    btn.textContent = '🔇';
+    showToast('🔇 Mic OFF');
+    document.getElementById(`pav-${myId}`)?.classList.remove('speaking');
+  }
+}
+
+// ===== RESULT MODAL =====
+function showResult(emoji, title, sub) {
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-sub').textContent = sub;
+  document.getElementById('result-overlay').classList.add('show');
+  
+  // Confetti
+  for (let i = 0; i < 20; i++) {
+    setTimeout(() => {
+      spawnFloatEmoji(['🎉','✨','🌟','💥','🎊'][Math.floor(Math.random()*5)], Math.random()*window.innerWidth, window.innerHeight*0.8);
+    }, i * 100);
+  }
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('show');
+  if (currentGame) loadGame(currentGame);
+}
+
+// ===== LEAVE =====
+function leaveRoom() {
+  if (confirm('Leave the room?')) {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('lobby').style.display = 'flex';
+    players = {}; scores = {}; currentGame = null;
+  }
+}
+</script>
+</body>
+</html>
